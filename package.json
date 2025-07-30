@@ -9,8 +9,8 @@
     "vitepress": "^1.6.3"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development vitepress dev docs --port=8732",
-    "build": "vitepress build docs",
-    "build:docs": "vitepress build docs"
+    "docs:dev": "cross-env NODE_ENV=development vitepress dev docs --port=8732",
+    "docs:build": "vitepress build docs",
+    "docs:build:docs": "vitepress build docs"
   }
 }
