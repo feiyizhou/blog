@@ -2,9 +2,19 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+
+  lang: 'zh-CN',
+
   title: "Blog",
+
   description: "Feiyizhou's Blog",
+
+  lastUpdated: true,
+  
+  cleanUrls: true,
+  
   base: "/blog/",
+  
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
