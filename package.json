@@ -4,11 +4,13 @@
   "private": true,
   "version": "1.0.0",
   "devDependencies": {
+    "@types/node": "^24.1.0",
+    "cross-env": "^10.0.0",
     "vitepress": "^1.6.3"
   },
   "scripts": {
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "dev": "cross-env NODE_ENV=development vitepress dev docs --port=8732",
+    "build": "vitepress build docs",
+    "build:docs": "vitepress build docs"
   }
 }

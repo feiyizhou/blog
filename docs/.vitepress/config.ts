@@ -1,7 +1,6 @@
 import { defineConfig } from "vitepress";
 
-import { nav } from "./configs/nav";
-import { sidebar } from "./configs/siderbar";
+import { head, nav, sidebar } from "./configs";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -11,13 +10,14 @@ export default defineConfig({
 
   description: "Feiyizhou's Blog",
 
+  head,
+
   lastUpdated: true,
 
   cleanUrls: true,
 
   base: "/blog/",
 
-  /* markdown 配置 */
   markdown: {
     lineNumbers: true,
     image: {
@@ -34,6 +34,12 @@ export default defineConfig({
 
     sidebar,
 
+    search: { provider: "local" },
+
+    socialLinks: [
+      { icon: "github", link: "https://github.com/vuejs/vitepress" },
+    ],
+
     outline: {
       level: "deep",
       label: "目录",
@@ -41,8 +47,9 @@ export default defineConfig({
 
     footer: {
       message: "如有转载或 CV 的请标注本站原文地址",
-      copyright: "Copyright © 2019-present maomao",
+      copyright: "Copyright © 2025-present Feiyizhou",
     },
+
     lastUpdated: {
       text: "最后更新于",
       formatOptions: {
@@ -57,9 +64,13 @@ export default defineConfig({
     },
 
     returnToTopLabel: "回到顶部",
+
     sidebarMenuLabel: "菜单",
+
     darkModeSwitchLabel: "主题",
+
     lightModeSwitchTitle: "切换到浅色模式",
+
     darkModeSwitchTitle: "切换到深色模式",
   },
 });
