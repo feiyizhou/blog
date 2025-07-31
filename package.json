@@ -31,7 +31,7 @@
     "vue": "^3.4.21"
   },
   "scripts": {
-    "docs:dev": "vitepress build docs && cross-env NODE_ENV=development vitepress dev docs --port=8732",
+    "docs:dev": "cross-env NODE_ENV=development vitepress dev docs --port=8732",
     "docs:build": "vitepress build docs"
   }
 }
