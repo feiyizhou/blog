@@ -1,6 +1,8 @@
 import type { DefaultTheme } from "vitepress";
 
 export const nav: DefaultTheme.Config["nav"] = [
+  { text: "首页", link: "/index" },
+  { text: "导航", link: "/nav", activeMatch: "^/nav" },
   {
     text: "后端物语",
     items: [
@@ -31,4 +33,5 @@ export const nav: DefaultTheme.Config["nav"] = [
     items: [],
     activeMatch: "^/ai/",
   },
+  { text: "About Me", link: "/feiyizhou" },
 ];

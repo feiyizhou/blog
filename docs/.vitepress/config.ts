@@ -1,4 +1,7 @@
 import { defineConfig } from "vitepress";
+import { La51Plugin } from "vitepress-plugin-51la";
+import MarkdownPreview from "vite-plugin-markdown-preview";
+import { VitePWA } from "vite-plugin-pwa";
 
 import { head, nav, sidebar } from "./configs";
 
@@ -72,5 +75,35 @@ export default defineConfig({
     lightModeSwitchTitle: "切换到浅色模式",
 
     darkModeSwitchTitle: "切换到深色模式",
+
+    visitor: {
+      badgeId: "feiyizhou.blog",
+    },
+
+    comment: {
+      repo: "feiyizhou/blog",
+      repoId: "R_kgDOPSZ_vQ",
+      category: "Announcements",
+      categoryId: "DIC_kwDOPSZ_vc4CtnBj",
+    },
+  },
+
+  sitemap: {
+    hostname: "https://feiyizhou.github.io/blog/",
+  },
+
+  vite: {
+    plugins: [
+      MarkdownPreview(),
+      La51Plugin({ id: "3LNfUkScYzEz6k4D", ck: "3LNfUkScYzEz6k4D" }),
+      // VitePWA({ srcDir: "/blog" }),
+    ],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
   },
 });
