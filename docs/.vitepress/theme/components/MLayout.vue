@@ -8,7 +8,7 @@ import { usePageId } from "../composables";
 
 import MNavVisitor from "./MNavVisitor.vue";
 import MDocFooter from "./MDocFooter.vue";
-import MAsideSponsors from "./MAsideSponsors.vue";
+// import MAsideSponsors from "./MAsideSponsors.vue";
 
 const { Layout } = DefaultTheme;
 const { isDark, theme, frontmatter } = useData();
@@ -102,9 +102,9 @@ provide("toggle-appearance", async ({ clientX: x, clientY: y }: MouseEvent) => {
       <MDocFooter />
     </template>
 
-    <template #aside-bottom>
+    <!-- <template #aside-bottom>
       <MAsideSponsors />
-    </template>
+    </template> -->
   </Layout>
 </template>
 

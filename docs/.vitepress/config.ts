@@ -9,15 +9,18 @@ import { head, nav, sidebar } from "./configs";
 export default defineConfig({
   lang: "zh-CN",
 
-  title: "Blog",
+  title: "Feiyizhou's Blog",
 
-  description: "Feiyizhou's Blog",
+  description:
+    "费益洲的探索之路，包括Golang、k8s、Docker学习总结、库使用技巧及示例、源码阅读笔记、脚本使用示例等",
 
   head,
 
   lastUpdated: true,
 
   cleanUrls: true,
+
+  ignoreDeadLinks: "localhostLinks",
 
   base: "/blog/",
 
