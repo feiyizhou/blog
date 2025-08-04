@@ -1,14 +1,19 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
 layout: home
+layoutClass: "m-home-layout"
 
 hero:
-  name: "Feiyizhou"
-  text: "Feiyizhou"
-  tagline: My great project tagline
+  name: "Feiyizhou's Blog"
+  text: "费益州个人成长之路"
+  tagline: 日拱一卒无有尽，功不唐捐终入海
   actions:
     - theme: brand
       text: Markdown Examples
+      link: /markdown-examples
+    - theme: alt
+      text: API Examples
+      link: /api-examples
+    - text: Markdown Examples
       link: /markdown-examples
     - theme: alt
       text: API Examples
@@ -24,7 +29,7 @@ features:
     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
 
-<!-- <script setup>
+<script setup>
 import MFriends from './home/MFriends.vue'
 </script>
 
@@ -42,20 +47,20 @@ import MFriends from './home/MFriends.vue'
 **申请方式**:
 
 1. 在本页面留言
-2. 直接访问 [GitHub 友链申请页面](https://github.com/maomao1996/mm-notes/issues/95) 提交您的申请
+2. 直接访问 [GitHub 友链申请页面](https://github.com/feiyizhou/blog/issues/3) 提交您的申请
 
 **本站信息**：
 
-- 网站名称: **茂茂物语**
+- 网站名称: **费益洲博客**
 - 网站描述: **茂茂的成长之路，包含前端常用知识、源码阅读笔记、各种奇淫技巧、日常提效工具等**
-- 网站地址：**<https://notes.fe-mm.com>**
+- 网站地址：**<https://feiyizhou.github.io/blog/>**
 - 网站图标：**<https://notes.fe-mm.com/logo.png>**
 
 ```json
 {
   "title": "茂茂物语",
   "desc": "茂茂的成长之路，包含前端常用知识、源码阅读笔记、各种奇淫技巧、日常提效工具等",
-  "link": "https://notes.fe-mm.com",
+  "link": "https://feiyizhou.github.io/blog/",
   "icon": "https://notes.fe-mm.com/logo.png"
 }
 ```

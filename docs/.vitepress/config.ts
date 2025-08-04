@@ -1,7 +1,5 @@
 import { defineConfig } from "vitepress";
-import { La51Plugin } from "vitepress-plugin-51la";
 import MarkdownPreview from "vite-plugin-markdown-preview";
-import { VitePWA } from "vite-plugin-pwa";
 
 import { head, nav, sidebar } from "./configs";
 
@@ -12,7 +10,7 @@ export default defineConfig({
   title: "Feiyizhou's Blog",
 
   description:
-    "费益洲的探索之路，包括Golang、k8s、Docker学习总结、库使用技巧及示例、源码阅读笔记、脚本使用示例等",
+    "费益洲的学习探索之路，包括Golang、k8s、Docker学习总结、库使用技巧及示例、源码阅读笔记、脚本使用示例等",
 
   head,
 
@@ -94,11 +92,7 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [
-      MarkdownPreview(),
-      La51Plugin({ id: "3LNfUkScYzEz6k4D", ck: "3LNfUkScYzEz6k4D" }),
-      // VitePWA({ srcDir: "/blog" }),
-    ],
+    plugins: [MarkdownPreview()],
     css: {
       preprocessorOptions: {
         scss: {
