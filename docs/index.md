@@ -52,14 +52,14 @@ import MFriends from './home/MFriends.vue'
 **本站信息**：
 
 - 网站名称: **费益洲博客**
-- 网站描述: **茂茂的成长之路，包含前端常用知识、源码阅读笔记、各种奇淫技巧、日常提效工具等**
+- 网站描述: **费益洲的学习探索之路，包括 Golang、k8s、Docker 学习总结、库使用技巧及示例、源码阅读笔记、脚本使用示例等**
 - 网站地址：**<https://feiyizhou.github.io/blog/>**
 - 网站图标：**<https://notes.fe-mm.com/logo.png>**
 
 ```json
 {
-  "title": "茂茂物语",
-  "desc": "茂茂的成长之路，包含前端常用知识、源码阅读笔记、各种奇淫技巧、日常提效工具等",
+  "title": "费益洲博客",
+  "desc": "费益洲的学习探索之路，包括Golang、k8s、Docker学习总结、库使用技巧及示例、源码阅读笔记、脚本使用示例等",
   "link": "https://feiyizhou.github.io/blog/",
   "icon": "https://notes.fe-mm.com/logo.png"
 }
