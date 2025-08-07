@@ -1,11 +1,10 @@
-import { text } from "stream/consumers";
 import type { DefaultTheme } from "vitepress";
 
 export const nav: DefaultTheme.Config["nav"] = [
   { text: "首页", link: "/index" },
   // { text: "导航", link: "/nav", activeMatch: "^/nav" },
   {
-    text: "Go",
+    text: "Golang",
     items: [
       { text: "类型", link: "/go/type" },
       { text: "并发", link: "/go/concurrency" },
@@ -35,7 +34,44 @@ export const nav: DefaultTheme.Config["nav"] = [
     ],
     activeMatch: "^/docker/",
   },
-  { text: "k8s", items: [], activeMatch: "^/k8s/" },
+  {
+    text: "k8s",
+    items: [
+      {
+        text: "部署",
+        items: [
+          { text: "集群", link: "/k8s/deploy/cluster" },
+          { text: "StorageClass", link: "/k8s/deploy/storageclass" },
+          { text: "Purelb", link: "/k8s/deploy/purelb" },
+        ],
+      },
+      {
+        text: "资源",
+        items: [
+          { text: "pod", link: "/k8s/resource/pod" },
+          { text: "deployment", link: "/k8s/resource/deployment" },
+          { text: "daemonset", link: "/k8s/resource/daemonset" },
+          { text: "job", link: "/k8s/resource/job" },
+          { text: "statefulset", link: "/k8s/resource/statefulset" },
+        ],
+      },
+      {
+        text: "operator",
+        items: [
+          { text: "crd", link: "/k8s/operator/crd" },
+          { text: "kube-builder", link: "/k8s/operator/kube-builder" },
+        ],
+      },
+      {
+        text: "helm",
+        items: [
+          { text: "命令行", link: "/k8s/helm/cmd" },
+          { text: "模板编写技巧", link: "/k8s/helm/template" },
+        ],
+      },
+    ],
+    activeMatch: "^/k8s/",
+  },
   {
     text: "库",
     items: [
@@ -44,20 +80,22 @@ export const nav: DefaultTheme.Config["nav"] = [
     ],
     activeMatch: "^/lib/",
   },
-  { text: "Shell", link: "/shell/awk", activeMatch: "^/shell/" },
   {
     text: "源码阅读",
-    items: [],
+    items: [
+      { text: "runc", link: "/sc/runc" },
+      { text: "k8s", link: "/sc/k8s" },
+    ],
     activeMatch: "^/sc/",
   },
   {
     text: "AI",
-    items: [],
+    items: [{ text: "agent", link: "/ai/agent" }],
     activeMatch: "^/ai/",
   },
   {
     text: "日常笔记",
-    items: [],
+    items: [{ text: "vitepress", link: "/daily-note/vitepress" }],
     activeMatch: "^/daily-note/",
   },
   { text: "About Me", link: "/feiyizhou" },

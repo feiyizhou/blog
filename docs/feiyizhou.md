@@ -1,5 +1,5 @@
 ---
-description: 费益洲：心有猛虎，细嗅蔷薇；保持对事物的热爱与好奇
+description: 费益洲：日拱一卒无有尽，功不唐捐终入海
 layoutClass: m-mao-layout
 aside: false
 ---
@@ -14,7 +14,7 @@ aside: false
 # 费益洲
 
 ```sh:no-line-numbers
-心有猛虎，细嗅蔷薇；保持对事物的热爱与好奇
+日拱一卒无有尽，功不唐捐终入海
 ```
 
 **Contact me:**
