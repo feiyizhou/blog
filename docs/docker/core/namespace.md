@@ -15,7 +15,46 @@ Namespace 本质是 Linux 系统内核的一种功能，其主要作用是对进
 | Cgroup Namespace  | CLONE_NEWCGROUP | Cgroup 文件系统                  | 4.6      |
 | Time Namespace    | CLONE_NEWTIME   | 时间                             | 5.6      |
 
-## 相关系统调用函数
+## Namespace 生命周期和回收策略
+
+Namespace 是随着进程创建而创建的，不存在脱离进程单独存在的 Namespace。而在 Linux 内核源码中，各类 Namespace 也是作为属性存在于进程结构体中。以下的代码都是以`linux-5.10.1`版本的内核源码为例。
+
+内核源码官方地址：[www.kernel.org](https://www.kernel.org/)
+
+linux-5.10.1 源码下载地址：[linux-5.10.1.tar.xz](https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.10.1.tar.xz)
+
+### 创建进程
+
+### Namespace 的创建
+
+进程结构体`task_struct`的定义在文件`linux-5.10.1/include/linux/sched.h`中，如下所示：
+
+```c
+struct task_struct {
+// ...(省略)
+
+	/* Namespaces: */
+	struct nsproxy			*nsproxy;
+
+// ...(省略)
+}
+```
+
+具体的`nsproxy`的定义在文件`linux-5.10.1/include/linux/nsproxy.h`中，如下所示：
+
+```c
+struct nsproxy {
+	atomic_t count;
+	struct uts_namespace *uts_ns;
+	struct ipc_namespace *ipc_ns;
+	struct mnt_namespace *mnt_ns;
+	struct pid_namespace *pid_ns_for_children;
+	struct net 	     *net_ns;
+	struct time_namespace *time_ns;
+	struct time_namespace *time_ns_for_children;
+	struct cgroup_namespace *cgroup_ns;
+};
+```
 
 和 Namespace 生命周期相关的系统调用函数有三个：clone、unshare、setns
 
@@ -49,8 +88,6 @@ int unshare(int flags);
 // int nstype：指定 Namespace 的类型
 int setns(int fd, int nstype);
 ```
-
-## 生命周期和回收策略
 
 ### Namespace 的数量限制
 
