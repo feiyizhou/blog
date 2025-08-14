@@ -1,5 +1,7 @@
 # Docker 核心技术：Namespace
 
+大家好，我是费益洲。Namespace 作为 Docker 的技术核心之一，主要作用就是对容器的资源进行隔离。容器的本质其实就是 Linux 的一个进程，容器的系统资源隔离其实就是进程的系统资源隔离，本文将从 Linux 内核源码的层面，谈谈进程是如何通过 Namespace 实现系统资源隔离的。
+
 本文中的的内核源码版本为`linux-5.10.1`，具体的源码可以自行下载查看，本文只列举关键代码。
 
 🔗 内核源码官方地址：[www.kernel.org](https://www.kernel.org/)，linux-5.10.1 源码下载地址：[linux-5.10.1.tar.xz](https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.10.1.tar.xz)
@@ -335,6 +337,281 @@ lrwxrwxrwx 1 root root 0 Aug 11 16:27 uts -> 'uts:[4026531838]'
 
 需要注意的是，如果多个进程的某个类型的 Namespace 的`inode number`一致，则说明这些进程同处同一个该类型的 Namespace 中，即可共享该类型下的系统资源。以`net -> 'net:[4026531992]'`为例，其中`net`是 Namespace 的类型，`4026531992`是`inode number`。如果两个业务进程的 Network Namespace 的 `inode number`相同，说明他们同处同一个 Network Namespace，这两个业务进程可以直接通过 localhost 进行业务访问。
 
+## UTS Namespace
+
+UTS Namespace 主要用来隔离 nodename 和 domainname 两个系统标识。在每个 UTS Namespace 中，都允许每个 Namespace 拥有自己的 hostname。即多个 UTS Namespace 中，允许 hostname 不一致。
+
+通过 Go 代码实现一个 UTS Namespace，代码如下所示：
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	cmd := exec.Command("sh")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+运行代码，并查看当前代码的进程信息：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1# echo $$
+57995
+```
+
+在宿主机中查看 UTS Namespace，验证下父子进程是否在同一个 UTS Namespace 中：
+
+```shell
+[root@master01 test]# readlink /proc/$$/ns/uts
+uts:[4026531838]
+[root@master01 test]# readlink /proc/57995/ns/uts
+uts:[4026533178]
+```
+
+由上面的两个不同的 inode number 可以看出，父子进程分别处于两个不同的 UTS Namespace 中，下面通过修改子进程的 hostname，查看宿主机的 hostname 是否变化来验证 UTS Namespace 的有效性。
+
+下查看子进程 hostname，再修改子进程 hostname：
+
+```shell
+# 查看原hostname
+sh-5.1# hostname
+master01
+# 修改子进程hostname
+sh-5.1# hostname -b uts-test
+# 查看修改后的子进程hostname
+sh-5.1# hostname
+uts-test
+```
+
+而在宿主机运行 hostname，查看宿主机 hostname：
+
+```shell
+[root@master01 test]# hostname
+master01
+```
+
+可以看出，宿主机的 hostname 并没有受子进程的修改而有变化，由此证明了 UTS Namespace 的有效性。
+
+## IPC Namespace
+
+IPC Namespace 主要作用是为进程间通信（IPC）资源提供独立的运行环境，确保不同容器或进程组之间的通信资源互不干扰。
+
+在上一版本的代码中增加创建 IPC Namespace 的标识，代码如下所示：
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	cmd := exec.Command("sh")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+运行代码，并查看当前代码的进程信息：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1# echo $$
+69200
+```
+
+在宿主机中查看 IPC Namespace，验证下父子进程是否在同一个 IPC Namespace 中：
+
+```shell
+[root@master01 test]# readlink /proc/$$/ns/ipc
+ipc:[4026531839]
+[root@master01 test]# readlink /proc/69200/ns/ipc
+ipc:[4026533179]
+```
+
+下面我们通过消息队列（Message Queues）来验证 IPC Namespace 的有效性。通过在宿主机上创建一个 Message Queues，子进程中不存在该 Message Queues 来验证 IPC Namespace 的有效性。
+
+在宿主机创建 Message Queues：
+
+```shell
+# 查看现有的 ipc Message Queues
+[root@master01 test]# ipcs -q
+
+------ Message Queues --------
+key        msqid      owner      perms      used-bytes   messages
+
+# 创建一个新的 Message Queues
+[root@master01 test]# ipcmk -Q
+Message queue id: 0
+# 再查看现有的 ipc Message Queues
+[root@master01 test]# ipcs -q
+
+------ Message Queues --------
+key        msqid      owner      perms      used-bytes   messages
+0x66d84650 0          root       644        0            0
+```
+
+从这里可以看到，宿主机现在已经存在了一个 Message Queue 了。此时，再去查看子进程中的 Message Queues：
+
+```shell
+sh-5.1# ipcs -q
+
+------ Message Queues --------
+key        msqid      owner      perms      used-bytes   messages
+
+```
+
+此时子进程中并没有宿主机中新创建的 Message Queue，说明子进程和宿主机的 IPC 已经被隔离了，互不影响，这就证明了 IPC Namespace 的有效性。
+
+## PID Namespace
+
+PID Namespace（进程标识符命名空间）主要用于隔离进程的 ID 空间 ​​，实现 Namespace 中进程的独立管理与资源隔离。进程独立管理，意味着在不同的 PID Namespace 中，初始进程编号都会是 1。
+
+在上一版本的代码中增加创建 PID Namespace 的标识，代码如下所示：
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	cmd := exec.Command("sh")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+运行代码，并查看当前代码的进程信息：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1# echo $$
+1
+```
+
+可以看出，此时子进程中的进程编号变为了 1。需要注意的是，此时不同使用 ps 命令查看进程标号，是因为 ps 命令会使用/proc 的内容，而 proc 是和 Mount Namespace 相关联的，此时未创建新的 Mount Namespace，所以此时使用 ps 看到的还是宿主机的进程内容。
+
+💡 此时子进程中的初始进程编号为 1，其实是宿主机进程编号映射出来的。可以在宿主机中通过`cat /proc/<pid>/status`查看子进程的编号映射关系：
+
+```shell
+# 查看子进程 sh 的进程编号
+[root@master01 test]# ps -ef  | grep main.go | grep -v grep
+root       78439   54883  0 11:17 pts/1    00:00:00 go run main.go
+[root@master01 test]# pstree -p 78439
+go(78439)─┬─main(78530)─┬─sh(78536)
+
+# 查看子进程状态信息
+cat /proc/78536/status
+Name:   sh
+Umask:  0022
+State:  S (sleeping)
+Tgid:   78536
+Ngid:   0
+Pid:    78536
+PPid:   78530
+TracerPid:      0
+Uid:    0       0       0       0
+Gid:    0       0       0       0
+FDSize: 256
+Groups: 0
+NStgid: 78536   1
+NSpid:  78536   1
+NSpgid: 78536   1
+NSsid:  54883   0
+# ...（省略部分输出）
+```
+
+`NSpid:  78536   1`，宿主机 PID：78536，第一层子空间 PID：1。此时就会有一个疑问，Linux 如何标记 PID 是哪一层空间的？这一特性其实在 PID Namespace 的结构体中就已经有体现了，PID Namespace 的结构体定义在文件`linux-5.10.1/include/linux/pid_namespace.h`，具体定义如下所示：
+
+```c
+struct pid_namespace {
+	struct kref kref;
+	struct idr idr;
+	struct rcu_head rcu;
+	unsigned int pid_allocated;
+	struct task_struct *child_reaper;
+	struct kmem_cache *pid_cachep;
+	unsigned int level;
+	struct pid_namespace *parent;
+#ifdef CONFIG_BSD_PROCESS_ACCT
+	struct fs_pin *bacct;
+#endif
+	struct user_namespace *user_ns;
+	struct ucounts *ucounts;
+	int reboot;	/* group exit code if this pidns was rebooted */
+	struct ns_common ns;
+} __randomize_layout;
+```
+
+🏷️ 关键字段`unsigned int level;`，具体的进程空间分层逻辑此处不再展开，有兴趣的同志可以自行查看源码逻辑。需要注意的是，`level`并不是可以无限制增加的，即 PID Namespace 的层级结构并不是可以无限制嵌套的。在内核源码中，限制了`MAX_PID_NS_LEVEL`为 32，且在 PID Namespace 的创建源码中也做了逻辑判断：
+
+`linux-5.10.1/include/linux/pid_namespace.h`定义了`MAX_PID_NS_LEVEL`:
+
+```c
+// line 16
+/* MAX_PID_NS_LEVEL is needed for limiting size of 'struct pid' */
+#define MAX_PID_NS_LEVEL 32
+```
+
+`linux-5.10.1/kernel/pid_namespace.c`中创建 PID Namespace 的代码做了逻辑判断:
+
+```c
+static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns,
+	struct pid_namespace *parent_pid_ns)
+{
+	// ...（省略部分代码）
+
+	// line 83
+	if (level > MAX_PID_NS_LEVEL)
+		goto out;
+
+	// ...（省略部分代码）
+}
+```
+
+🏷️ 关键字段`struct pid_namespace *parent;`则表明了当前 PID Namespace 所关联的父级 PID Namespace 的信息。
+
 ## Mount Namespace
 
 Mount Namespace 用来隔离各个进程的文件挂载点，在不同的 Mount Namespace 中，看到的文件挂载点是不一样的。同样在不同的 Mount Namespace 中进行`mount()`和`unmount()`，也只会影响当前进程的文件挂载点，不会影响其他不同 Mount Namespace 中的进程的文件挂载点。
@@ -354,7 +631,8 @@ import (
 func main() {
 	cmd := exec.Command("sh")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWNS,
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS,
 	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -370,7 +648,7 @@ func main() {
 
 ```shell
 # 查看进程编号
-[root@master01 ~]# ps -ef |grep main.go | grep -v grep
+[root@master01 ~]# ps -ef | grep main.go | grep -v grep
 root      196556  190857  0 16:50 pts/2    00:00:00 go run main.go
 
 # 查看进程的层级关系
@@ -387,4 +665,231 @@ mnt:[4026531840]
 mnt:[4026532560]
 ```
 
-通过 inode number 可以看出，他们不在同一个 Mount Namespace 中。由于 Mount Namespace 对文件系统挂载点做了隔离，下面通过挂载不同的文件来进行验证。
+通过 inode number 可以看出，他们不在同一个 Mount Namespace 中。下面我们通过重新挂载 `proc` 来验证 Mount Namespace 的有效性。
+
+📑 （`proc` 文件系统，简称 `procfs`）是 Linux 内核中一种独特的 ​​ 虚拟文件系统 ​​，它不占用磁盘空间，而是由内核动态生成，提供与内核及进程信息的交互接口。我们可以通过在子进程中重新挂载 `proc`，验证子进程与宿主机的 `/proc` 中内容是否一致的方式，来验证 Mount Namespace 的有效性。
+
+先查看子进程中 `/proc` 下的内容：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1# ls /proc/
+1      141     168   194   2465   37161  40     45570  66          buddyinfo      locks
+10     142     169   195   249    37182  40045  45579  67          bus            mdstat
+1024   143     17    196   25     37232  40061  45945  700         cgroups        meminfo
+1028   144     170   197   26     37258  41     46     74309       cmdline        misc
+1030   145     171   198   27     37277  41889  47     74317       config.gz      modules
+1031   146     172   199   2780   37338  41891  48511  74325       consoles       mounts
+1033   147     173   2     2800   37400  41892  488    74417       cpuinfo        mpt
+1034   148     174   20    2826   37455  42     49     7545        crypto         mtrr
+1036   149     175   200   2836   37525  42433  490    7546        devices        net
+1063   15      176   2006  29     37577  42519  492    78403       dirty          pagetypeinfo
+1075   150     177   201   291    37602  42523  494    8           diskstats      partitions
+1085   150864  178   202   293    37656  42524  495    84          dma            sched_debug
+1088   150866  179   203   2932   37686  42885  498    9           driver         schedstat
+1090   151     180   2078  2952   37738  42903  499    90765       dynamic_debug  scsi
+1093   16      181   21    2966   37771  42918  510    944         execdomains    self
+1096   161373  182   2128  297    37807  42961  511    959         fb             slabinfo
+10988  1629    183   2149  2993   37844  43102  532    960         filesystems    softirqs
+11     164     184   2169  3      37888  43110  533    961         fs             stat
+1138   164028  185   2193  30     37937  43889  54883  962         interrupts     swaps
+1139   165     186   22    300    37958  43897  58     963         iomem          sys
+1152   165753  187   2214  31     37971  43898  58610  964         ioports        sysrq-trigger
+1154   165860  188   2223  317    37998  44     58627  965         irq            sysvipc
+12     165894  189   2252  318    38011  44263  59     966         kallsyms       thread-self
+12738  166     1893  2273  32     38033  44274  6      967         kcore          timer_list
+13     166630  1899  2292  34     38046  44315  60     968         keys           tty
+135    166777  19    2313  35     38067  44332  62     98304       key-users      uptime
+136    166809  190   2342  36     38091  44338  63     98306       kmsg           version
+137    166813  191   2364  36054  38119  44344  64     988         kpagecgroup    vmallocinfo
+138    166902  1916  24    36066  38215  44771  64463  989         kpagecount     vmstat
+139    166908  192   2405  36111  3855   44821  65     999         kpageflags     zoneinfo
+14     166979  193   2426  36123  39     44954  65653  acpi        livepatch
+140    167     1937  2445  37     4      45     659    bootconfig  loadavg
+```
+
+通过对比发现，此时`/proc`下的内容还是宿主机的内容。是因为创建进程的时候，Mount Namespace 的初始值默认是从当前进程拷贝的，所以和宿主机`/proc`的内容一致。我们将`/proc`挂载到子进程的 Mount Namespace 中：
+
+```shell
+sh-5.1# mount -t proc proc /proc
+sh-5.1# ls /proc/
+1           cpuinfo        filesystems  kmsg         modules       self           tty
+4           crypto         fs           kpagecgroup  mounts        slabinfo       uptime
+acpi        devices        interrupts   kpagecount   mpt           softirqs       version
+bootconfig  dirty          iomem        kpageflags   mtrr          stat           vmallocinfo
+buddyinfo   diskstats      ioports      livepatch    net           swaps          vmstat
+bus         dma            irq          loadavg      pagetypeinfo  sys            zoneinfo
+cgroups     driver         kallsyms     locks        partitions    sysrq-trigger
+cmdline     dynamic_debug  kcore        mdstat       sched_debug   sysvipc
+config.gz   execdomains    keys         meminfo      schedstat     thread-self
+consoles    fb             key-users    misc         scsi          timer_list
+```
+
+从上面的输出可以看出，重新挂载`proc`后，`/proc`里面的内容发生了变化。下面再通过`ps`名称查看系统进程：
+
+```shell
+sh-5.1# ps -aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0  23088  4208 pts/1    S    14:35   0:00 sh
+root          11  0.0  0.0  26420  5008 pts/1    R+   14:41   0:00 ps -aux
+```
+
+从上面的输出可以看出，在当前子进程中，`sh`进程是`pid`为 1 的初始进程。这就再次证明，当前子进程的 Mount Namespace 和宿主机的 Mount Namespace 是完全隔离的，在子进程中的 mount 操作，并没有影响到宿主机。
+
+## User Namespace
+
+User Namespace 是 Linux 内核中用于隔离用户权限的核心机制，它通过分割用户/组 ID（uid/gid）和权限能力（capability），实现容器内外的安全隔离。
+
+UID/GID 映射 ​​ 允许容器内进程使用独立的用户身份体系，与宿主机或其他容器隔离。例如容器内以 root（uid 0）运行的进程，在宿主机上实际映射为非特权用户（如 uid 1000）。其中映射规则通过 `/proc/<pid>/uid_map` 和 `/proc/<pid>/gid_map` 文件配置，定义容器内 ID 与宿主机 ID 的对应关系。若未映射，则默认使用 65534（nobody）。
+
+User Namespace 是作为 PID Namespace 的一个结构体属性出现的（可以查看本文中展示的 PID Namespace 结构体），这种设计很好理解：即每个进程都需要指定 User Namespace，具体的 User Namespace 定义在`linux-5.10.1/include/linux/user_namespace.h`，详细字段如下所示：
+
+```c
+struct user_namespace {
+	struct uid_gid_map	uid_map;
+	struct uid_gid_map	gid_map;
+	struct uid_gid_map	projid_map;
+	atomic_t		count;
+	struct user_namespace	*parent;
+	int			level;
+	kuid_t			owner;
+	kgid_t			group;
+	struct ns_common	ns;
+	unsigned long		flags;
+
+#ifdef CONFIG_KEYS
+	/* List of joinable keyrings in this namespace.  Modification access of
+	 * these pointers is controlled by keyring_sem.  Once
+	 * user_keyring_register is set, it won't be changed, so it can be
+	 * accessed directly with READ_ONCE().
+	 */
+	struct list_head	keyring_name_list;
+	struct key		*user_keyring_register;
+	struct rw_semaphore	keyring_sem;
+#endif
+
+	/* Register of per-UID persistent keyrings for this namespace */
+#ifdef CONFIG_PERSISTENT_KEYRINGS
+	struct key		*persistent_keyring_register;
+#endif
+	struct work_struct	work;
+#ifdef CONFIG_SYSCTL
+	struct ctl_table_set	set;
+	struct ctl_table_header *sysctls;
+#endif
+	struct ucounts		*ucounts;
+	int ucount_max[UCOUNT_COUNTS];
+} __randomize_layout;
+```
+
+同 PID Namespace 一样，User Namespace 也支持层级嵌套：
+
+🏷️ 关键字段`int level;`, 同 PID Namespace 的`level`字段一直，PID Namespace 也不支持无限嵌套，其最多也只支持嵌套 32 层。在创建 User Namespace 的内核源码中做了逻辑判断：
+
+`linux-5.10.1/kernel/user_namespace.c`中创建 User Namespace 时做了限制：
+
+```c
+int create_user_ns(struct cred *new)
+{
+	// ...（省略部分代码）
+
+	// line 78
+	if (parent_ns->level > 32)
+		goto fail;
+
+	// ...（省略部分代码）
+}
+```
+
+在 User Namespace 的嵌套结构形成的父子关系下，权限判断依照一下规则：
+
+1. 父级 User Namespace 可以管理子 User Namespace，反之则不可。
+2. 同级或子级 Namespace：禁止操作。
+3. 父级 Namespace 且为 owner：拥有全部权限。
+4. ​​ 其他 Namespace 的依赖 ​​ 创建其他类型 Namespace（如 PID、Mount）时，需在当前 User Namespace 拥有 CAP_SYS_ADMIN 能力。而创建 User Namespace 本身无需特权。
+
+我们在之前版本的 Go 代码中添加创建 User Namespace 的标识，通过查看子进程中的 UID、GID 来验证 User Namespace 的有效性，代码如下所示：
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	cmd := exec.Command("sh")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+以 root 权限运行代码，并查看 UID、GID，如下所示：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1$ id
+uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
+```
+
+可以看到，子进程内的 uid 和 gid 不是 root 用户，因此证明 User Namespace 的有效性。
+
+## Network Namespace
+
+Network Namespace（网络命名空间）是 Linux 内核提供的一种网络资源隔离机制，它通过分割网络协议栈资源，实现多个独立网络环境的共存。
+
+网络资源隔离通过一下三种方式实现：
+
+1. 独立网络设备 ​​：每个 Network Namespace 拥有专属的虚拟或物理网络接口（如 veth、eth0），不同命名空间的设备互不可见。
+2. ​​ 独立 IP 和路由表 ​​：可配置独立的 IP 地址、子网、路由规则，避免地址冲突或路由干扰。
+3. 隔离防火墙与端口 ​​：支持独立的 iptables/nftables 规则和端口分配，实现定制化的安全策略。
+
+我们在之前版本的 Go 代码中添加创建 Network Namespace 的标识，通过查看子进程中的网络设备和宿主机是否一致来验证 Network Namespace 的有效性，代码如下所示：
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	cmd := exec.Command("sh")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER | syscall.CLONE_NEWNET,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+运行代码后，在子进程中查看网络设备，如下所示：
+
+```shell
+[root@master01 test]# go run main.go
+sh-5.1$ ifconfig
+sh-5.1$
+```
+
+从上面的输出可以看出，子进程中没有任何的网络设备，这就说明子进程的网络设备和宿主机是完全隔离的，证明了 Network Namespace 的有效性。
