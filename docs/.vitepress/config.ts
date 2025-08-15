@@ -92,6 +92,11 @@ export default defineConfig({
   },
 
   vite: {
+    server: {
+      watch: {
+        ignored: ["**/node_modules/**", "**/.git/**"],
+      },
+    },
     plugins: [MarkdownPreview()],
     css: {
       preprocessorOptions: {
