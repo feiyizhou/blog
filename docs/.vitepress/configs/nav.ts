@@ -22,9 +22,9 @@ export const nav: DefaultTheme.Config["nav"] = [
       {
         text: "Docker核心技术",
         items: [
-          { text: "namespace", link: "/docker/core/namespace" },
-          { text: "cgroups", link: "/docker/core/cgroups" },
-          { text: "unionfs", link: "/docker/core/unionfs" },
+          { text: "Linux Namespace", link: "/docker/core/namespace" },
+          { text: "Linux Cgroups", link: "/docker/core/cgroups" },
+          { text: "Union File System", link: "/docker/core/unionfs" },
         ],
       },
       { text: "Dockerfile", link: "/docker/dockerf" },

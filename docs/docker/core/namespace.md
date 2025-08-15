@@ -1,8 +1,8 @@
 ![Docker](/docker/docker.png)
 
-# Docker 核心技术：Namespace
+# Docker 核心技术：Linux Namespace
 
-大家好，我是费益洲。Namespace 作为 Docker 的技术核心之一，主要作用就是对容器的资源进行隔离。容器的本质其实就是 Linux 的一个进程，容器的系统资源隔离其实就是进程的系统资源隔离，本文将从 Linux 内核源码的层面，谈谈进程是如何通过 Namespace 实现系统资源隔离的。
+大家好，我是费益洲。Linux Namespace 作为 Docker 的技术核心之一，主要作用就是对容器的资源进行隔离。容器的本质其实就是 Linux 的一个进程，容器的系统资源隔离其实就是进程的系统资源隔离，本文将从 Linux 内核源码的层面，谈谈进程是如何通过 Namespace 实现系统资源隔离的。
 
 本文中的的内核源码版本为`linux-5.10.1`，具体的源码可以自行下载查看，本文只列举关键代码。
 

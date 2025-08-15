@@ -16,9 +16,9 @@ export const sidebar: DefaultTheme.Config["sidebar"] = {
       text: "Docker核心技术",
       collapsed: false,
       items: [
-        { text: "namespace", link: "/docker/core/namespace" },
-        { text: "cgroups", link: "/docker/core/cgroups" },
-        { text: "unionfs", link: "/docker/core/unionfs" },
+        { text: "Linux Namespace", link: "/docker/core/namespace" },
+        { text: "Linux Cgroups", link: "/docker/core/cgroups" },
+        { text: "Union File System", link: "/docker/core/unionfs" },
       ],
     },
   ],
