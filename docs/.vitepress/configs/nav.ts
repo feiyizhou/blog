@@ -6,8 +6,13 @@ export const nav: DefaultTheme.Config["nav"] = [
   {
     text: "Golang",
     items: [
-      { text: "类型", link: "/go/type" },
-      { text: "并发", link: "/go/concurrency" },
+      {
+        text: "Go基础知识",
+        items: [
+          { text: "类型", link: "/go/type" },
+          { text: "并发", link: "/go/concurrency" },
+        ],
+      },
     ],
     activeMatch: "^/go/",
   },
@@ -15,19 +20,11 @@ export const nav: DefaultTheme.Config["nav"] = [
     text: "Docker",
     items: [
       {
-        text: "Usage",
-        items: [
-          { text: "镜像", link: "/docker/usage/image" },
-          { text: "容器", link: "/docker/usage/container" },
-          { text: "docker-compose", link: "/docker/usage/docker-compose" },
-        ],
-      },
-      {
-        text: "核心原理",
+        text: "Docker核心技术",
         items: [
           { text: "namespace", link: "/docker/core/namespace" },
           { text: "cgroups", link: "/docker/core/cgroups" },
-          { text: "rootfs", link: "/docker/core/rootfs" },
+          { text: "unionfs", link: "/docker/core/unionfs" },
         ],
       },
       { text: "Dockerfile", link: "/docker/dockerf" },
