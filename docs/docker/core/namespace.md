@@ -31,7 +31,7 @@ Namespace 是随着进程创建而创建的，不存在脱离进程单独存在�
 
 ### Namespace 的创建过程
 
-进程结构体`task_struct`的定义在文件`linux-5.10.1/include/linux/sched.h`中，如下所示：
+进程结构体`task_struct`的定义在文件`linux-5.10.1/include/linux/sched.h`中，与 Namespace 相关的关键数据结构如下所示：
 
 ```c
 struct task_struct {
@@ -137,12 +137,12 @@ SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
 ```c
 pid_t kernel_clone(struct kernel_clone_args *args)
 {
-	...（省略部分代码）
+	// ...（省略部分代码）
 
 	// line 2456
 	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
 
-	...（省略部分代码）
+	// ...（省略部分代码）
 }
 ```
 
@@ -276,7 +276,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
 
 Namespace 并不是可以无限制创建的。Linux 中对不同类型的 Namespace 都设置了数量上限，具体的限制可以在`/proc/sys/user`中查看，如下所示：
 
-```shell
+```bash
 [root@master01 ~]# ls -al /proc/sys/user/
 total 0
 dr-xr-xr-x 1 root root 0 Aug 11 17:02 .
@@ -320,7 +320,7 @@ Namespace 是面对进程的，所以系统中的每个进行都会有一个`/pr
 
 查看当前 bash 进程所属的 Namespace：
 
-```shell
+```bash
 [root@master01 ~]# ls -al /proc/$$/ns
 total 0
 dr-x--x--x 2 root root 0 Aug 11 16:27 .
@@ -372,7 +372,7 @@ func main() {
 
 运行代码，并查看当前代码的进程信息：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1# echo $$
 57995
@@ -380,7 +380,7 @@ sh-5.1# echo $$
 
 在宿主机中查看 UTS Namespace，验证下父子进程是否在同一个 UTS Namespace 中：
 
-```shell
+```bash
 [root@master01 test]# readlink /proc/$$/ns/uts
 uts:[4026531838]
 [root@master01 test]# readlink /proc/57995/ns/uts
@@ -391,7 +391,7 @@ uts:[4026533178]
 
 下查看子进程 hostname，再修改子进程 hostname：
 
-```shell
+```bash
 # 查看原hostname
 sh-5.1# hostname
 master01
@@ -404,7 +404,7 @@ uts-test
 
 而在宿主机运行 hostname，查看宿主机 hostname：
 
-```shell
+```bash
 [root@master01 test]# hostname
 master01
 ```
@@ -444,7 +444,7 @@ func main() {
 
 运行代码，并查看当前代码的进程信息：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1# echo $$
 69200
@@ -452,7 +452,7 @@ sh-5.1# echo $$
 
 在宿主机中查看 IPC Namespace，验证下父子进程是否在同一个 IPC Namespace 中：
 
-```shell
+```bash
 [root@master01 test]# readlink /proc/$$/ns/ipc
 ipc:[4026531839]
 [root@master01 test]# readlink /proc/69200/ns/ipc
@@ -463,7 +463,7 @@ ipc:[4026533179]
 
 在宿主机创建 Message Queues：
 
-```shell
+```bash
 # 查看现有的 ipc Message Queues
 [root@master01 test]# ipcs -q
 
@@ -483,7 +483,7 @@ key        msqid      owner      perms      used-bytes   messages
 
 从这里可以看到，宿主机现在已经存在了一个 Message Queue 了。此时，再去查看子进程中的 Message Queues：
 
-```shell
+```bash
 sh-5.1# ipcs -q
 
 ------ Message Queues --------
@@ -526,7 +526,7 @@ func main() {
 
 运行代码，并查看当前代码的进程信息：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1# echo $$
 1
@@ -536,7 +536,7 @@ sh-5.1# echo $$
 
 💡 此时子进程中的初始进程编号为 1，其实是宿主机进程编号映射出来的。可以在宿主机中通过`cat /proc/<pid>/status`查看子进程的编号映射关系：
 
-```shell
+```bash
 # 查看子进程 sh 的进程编号
 [root@master01 test]# ps -ef  | grep main.go | grep -v grep
 root       78439   54883  0 11:17 pts/1    00:00:00 go run main.go
@@ -648,7 +648,7 @@ func main() {
 
 运行代码，并查看当前代码的进程信息：
 
-```shell
+```bash
 # 查看进程编号
 [root@master01 ~]# ps -ef | grep main.go | grep -v grep
 root      196556  190857  0 16:50 pts/2    00:00:00 go run main.go
@@ -660,7 +660,7 @@ bash(190857)───go(196556)─┬─main(196646)─┬─sh(196652)
 
 验证下父子进程是否不在同一个 Mount Namespace 中，验证代码如下：
 
-```shell
+```bash
 [root@master01 ~]# readlink /proc/196646/ns/mnt
 mnt:[4026531840]
 [root@master01 ~]# readlink /proc/196652/ns/mnt
@@ -673,7 +673,7 @@ mnt:[4026532560]
 
 先查看子进程中 `/proc` 下的内容：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1# ls /proc/
 1      141     168   194   2465   37161  40     45570  66          buddyinfo      locks
@@ -712,7 +712,7 @@ sh-5.1# ls /proc/
 
 通过对比发现，此时`/proc`下的内容还是宿主机的内容。是因为创建进程的时候，Mount Namespace 的初始值默认是从当前进程拷贝的，所以和宿主机`/proc`的内容一致。我们将`/proc`挂载到子进程的 Mount Namespace 中：
 
-```shell
+```bash
 sh-5.1# mount -t proc proc /proc
 sh-5.1# ls /proc/
 1           cpuinfo        filesystems  kmsg         modules       self           tty
@@ -729,7 +729,7 @@ consoles    fb             key-users    misc         scsi          timer_list
 
 从上面的输出可以看出，重新挂载`proc`后，`/proc`里面的内容发生了变化。下面再通过`ps`名称查看系统进程：
 
-```shell
+```bash
 sh-5.1# ps -aux
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.0  23088  4208 pts/1    S    14:35   0:00 sh
@@ -840,7 +840,7 @@ func main() {
 
 以 root 权限运行代码，并查看 UID、GID，如下所示：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1$ id
 uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
@@ -888,7 +888,7 @@ func main() {
 
 运行代码后，在子进程中查看网络设备，如下所示：
 
-```shell
+```bash
 [root@master01 test]# go run main.go
 sh-5.1$ ifconfig
 sh-5.1$
