@@ -2,7 +2,7 @@
 
 # Docker 核心技术：Linux Cgroups
 
-大家好，我是费益洲。Linux Cgroups 作为 Docker 的技术核心之一，主要作用就是限制、控制和统计进程组的系统资源 ​​（如 CPU、内存、磁盘 I/O 等）。容器的本质其实就是 Linux 的一个进程，限制、控制和统计容器的系统资源，其实就是限制、控制和统计进程的系统资源，本文将从 Linux 内核源码的层面，谈谈如何通过 Cgroups 实现限制、控制和统计进程的系统资源。
+大家好，我是费益洲。Linux Cgroups 作为 Docker 的技术核心之一，主要作用就是限制、控制和统计进程组的系统资源 ​​（如 CPU、内存、磁盘 I/O 等）。容器的本质其实就是 Linux 的一个进程，限制、控制和统计容器的系统资源，其实就是限制、控制和统计进程的系统资源，本文将从 Linux 内核源码的层面，谈谈如何通过 Cgroups 实现限制系统资源。
 
 本文中的的内核源码版本为`linux-5.10.1`，具体的源码可以自行下载查看，本文只列举关键代码。
 
@@ -23,8 +23,7 @@ Cgroups 的全称是 Control Groups，是 Linux 内核提供的一种机制，�
 
 1. 层级结构（Hierarchy）
 
-   - 树形组织，子级 cgroup 进程父级 cgroup 的限制（如`/sys/fs/cgroup/cpu/father/child`child 初始继承 father 的限制）
-   - 子级 cgroup 可以通过`mkdir`命令在父级 cgroup 目录下创建
+   - 树形组织，子级 cgroup 进程继承父级 cgroup 的限制（如`/sys/fs/cgroup/memory/father/child`child 初始继承 father 的限制）
 
 2. 子系统（Subsystem）
 
@@ -53,6 +52,30 @@ Cgroups 的全称是 Control Groups，是 Linux 内核提供的一种机制，�
    echo 1G > /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes
    # 将进程加入 cgroup
    echo 1234 > /sys/fs/cgroup/memory/mygroup/cgroup.procs
+   ```
+
+   - 子级文件系统接口可以通过`mkdir`命令在父级文件系统接口目录下创建，并会自动创建并继承父级文件系统接口的配置
+
+   ```bash
+   [root@master01 ~]# cd /sys/fs/cgroup/memory
+   [root@master01 memory]# mkdir mygroup
+   [root@master01 memory]# ls mygroup/
+   cgroup.clone_children           memory.kmem.tcp.failcnt             memory.numa_stat
+   cgroup.event_control            memory.kmem.tcp.limit_in_bytes      memory.oom_control
+   cgroup.kill                     memory.kmem.tcp.max_usage_in_bytes  memory.pressure_level
+   cgroup.procs                    memory.kmem.tcp.usage_in_bytes      memory.qos_level
+   memory.events                   memory.kmem.usage_in_bytes          memory.reclaim
+   memory.events.local             memory.ksm                          memory.soft_limit_in_bytes
+   memory.failcnt                  memory.limit_in_bytes               memory.stat
+   memory.flag_stat                memory.low                          memory.swapfile
+   memory.force_empty              memory.max_usage_in_bytes           memory.swap.max
+   memory.force_swapin             memory.memfs_files_info             memory.swappiness
+   memory.high                     memory.memsw.failcnt                memory.usage_in_bytes
+   memory.high_async_ratio         memory.memsw.limit_in_bytes         memory.use_hierarchy
+   memory.kmem.failcnt             memory.memsw.max_usage_in_bytes     memory.wb_blkio_ino
+   memory.kmem.limit_in_bytes      memory.memsw.usage_in_bytes         notify_on_release
+   memory.kmem.max_usage_in_bytes  memory.min                          tasks
+   memory.kmem.slabinfo            memory.move_charge_at_immigrate
    ```
 
 ⚠️ 不要直接修改根目录（`/sys/fs/cgroup`）下的子系统配置
@@ -212,3 +235,60 @@ void cgroup_post_fork(struct task_struct *child,
      - 增加 cset->nr_tasks 计数
      - 将 child->cg_list 链入 cset->tasks 链表，完成 cgroup 绑定
 2. 调用各子系统的 ss->fork()回调（如 cpuset_fork()复制父进程的 CPU 亲和性和内存策略）
+
+通过 fork() → cgroup_fork()（设默认值） → cgroup_can_fork() → cgroup_post_fork()（继承父进程 css_set） → 进程正式加入父进程的 cgroup 组。
+
+💡 内核在启动时会通过 cgroup_init_early() 和 cgroup_init() 构建全局 cgroup 框架，后续的进程都默认加入全局的 cgroup 组。
+
+### Cgroups 限制资源的实现
+
+#### CPU 资源限制
+
+限制进程的 CPU 使用率的根本原理是限制进程在 CPU 中占用的时间配额的占比。CPU 限制主要通过 ​​CFS（Completely Fair Scheduler）调度器实现，相关参数为：
+
+- cpu.cfs_period_us：定义资源分配的周期长度（单位：微秒），​​ 默认 100000μs
+
+- cpu.cfs_quota_us：定义在周期内允许进程组使用的最大 CPU 时间（单位：微秒），默认 -1，当为 -1 时，表示不限制 CPU 的使用率
+
+两者的比值决定 CPU 使用率上限：
+
+> 使用率上限 = cpu.cfs_quota_us / cpu.cfs_period_us
+
+例如：
+
+- quota=50000 period=100000 → 上限 50%（单核）
+- quota=200000 period=100000 → 上限 200%（双核）
+
+#### Memory 资源限制
+
+memory 子系统通过内核级的内存资源跟踪与强制干预机制实现对进程组内存使用的精确限制，主要参数为：
+
+- memory.limit_in_bytes：硬性内存限制
+
+  单位：字节，支持 K/M/G 后缀，如果设置为 -1，则表示解除 memory 限制
+
+  功能：
+
+  - 设置 cgroup 中所有进程可使用的物理内存上限
+  - 当进程尝试分配超过此限制的内存时，内核会拒绝分配并可能触发 OOM Killer 终止进程
+
+- memory.soft_limit_in_bytes：软性内存限制
+
+  单位：字节，支持 K/M/G 后缀，如果设置为 -1，则表示解除 memory 限制
+
+  功能：
+
+  - 设置内存使用的警戒线
+  - 不强制阻止超限，但在系统全局内存紧张时，内核优先回收超限 cgroup 的内存（如 PageCache），使其用量向软限制值靠拢
+
+  ⚠️ 软限制值必须小于硬限制值 memory.limit_in_bytes ，否则无效
+
+此处只列举 memory.limit_in_bytes、memory.soft_limit_in_bytes 两个参数，其余参数同志们自行探索。
+
+### Cgroups 回收
+
+cgroup 的回收也是由引用计数（refcount）​​ 来判断和执行的，具体的回收流程此处不再研究，感兴趣的通知可以自行查阅源码。回收的标准和原则就是：**引用计数归零**（即无任何进程关联、无子 cgroup、无文件描述符引用）。
+
+💡 示例 ​​：删除一个 cgroup 需先移除所有进程（echo $$ > /sys/fs/cgroup/cgroup.procs），再删除子 cgroup，最后 `rmdir` 其目录。若未清空进程直接删除，内核因引用计数 >0 而拒绝操作
+
+## Go 通过 Cgroups 限制进程的资源
