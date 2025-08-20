@@ -292,3 +292,147 @@ cgroup 的回收也是由引用计数（refcount）​​ 来判断和执行的�
 💡 示例 ​​：删除一个 cgroup 需先移除所有进程（echo $$ > /sys/fs/cgroup/cgroup.procs），再删除子 cgroup，最后 `rmdir` 其目录。若未清空进程直接删除，内核因引用计数 >0 而拒绝操作
 
 ## Go 通过 Cgroups 限制进程的资源
+
+在之前测试了 Namespace 的 Go 代码的基础上，做出修改，使用工具 stress 对进程进行压力测试，来验证 Cgroups 的有效性，Go 代码如下：
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path"
+	"strconv"
+	"strings"
+	"syscall"
+)
+
+const cgroupMemoryPath = "/sys/fs/cgroup/memory"
+
+func main() {
+
+	if strings.EqualFold(os.Args[0], "/proc/self/exe") {
+		fmt.Printf("current pid: %d\n", syscall.Getpid())
+		cmd := exec.Command("sh", "-c", `stress --vm-bytes 2048m --vm-keep -m 1 --vm-hang 1`)
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Internal Error: %s\n", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	cmd := exec.Command("/proc/self/exe")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWIPC | syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER | syscall.CLONE_NEWNET,
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		os.Exit(1)
+	} else {
+		fmt.Printf("process id: %d\n", cmd.Process.Pid)
+		// create child memory subsystem
+		os.Mkdir(path.Join(cgroupMemoryPath, "mygroup"), 0755)
+		// add process pid to child memory subsystem
+		os.WriteFile(path.Join(cgroupMemoryPath, "mygroup", "tasks"), []byte(strconv.Itoa(cmd.Process.Pid)), 0644)
+		// limit memory usage
+		os.WriteFile(path.Join(cgroupMemoryPath, "mygroup", "memory.limit_in_bytes"), []byte("1024m"), 0644)
+	}
+	cmd.Process.Wait()
+}
+```
+
+💡 宿主机需要提前安装好 stress
+
+在宿主机运行代码后，输出如下：
+
+```bash
+[root@master01 test]# go run main.go
+process id: 623769
+current pid: 1
+stress: info: [7] dispatching hogs: 0 cpu, 0 io, 1 vm, 0 hdd
+stress: FAIL: [7] (415) <-- worker 8 got signal 9
+stress: WARN: [7] (417) now reaping child worker processes
+stress: FAIL: [7] (421) kill error: No such process
+stress: FAIL: [7] (451) failed run completed in 0s
+Internal Error: exit status 1
+```
+
+现在对 Go 代码和报错进行分析：
+
+- 代码的主要功能是创建一个隔离了系统资源的新进程（通过`/proc/self/exe`重新执行自身），并在新的 Namespace 中运行工具 stress。同时还创建了一个名为`mygroup`的 cgroup ，将新进程加入其中，还限制了`mygroup`的内存使用上限为`1024MB`。而 stress 工具的参数是`--vm-bytes 2048m`，即尝试为该进程分配`2048MB`的内存。
+- 报错信息中，stress 工具在运行过程中被终止，并显示`signal 9`。继续分析后面的报错信息，表明了 stress 工具是在尝试尝试分配内存后被强制 kill。
+
+根据以上信息，我们可以推导出以下原因：
+
+1. cgroup 内存限制生效：我们在 cgroup 中设置了内存限制为 1024MB（memory.limit_in_bytes=1024m）。而 stress 命令试图分配 2048MB 内存（--vm-bytes 2048m），这显然超过了 1024MB 的限制
+2. OOM Killer 触发：当进程使用的内存超过 cgroup 设置的限制时，内核的 OOM Killer 会被触发，并发送 SIGKILL 信号（信号 9）终止该进程。这正是错误信息中提到的 signal 9 的来源
+
+接下来，通过以下两种方案来进行反向验证：
+
+- 将 cgroup 的内存限制调整为 2048MB 以上，使其能够容纳 stress 命令的内存需求
+- 将 stress 命令的内存分配参数（--vm-bytes）调整到 1024MB 以内，使其在限制范围内运行
+
+我们使用第二种方案进行验证，将 stress 的内存分配修改为 512MB，执行代码，输出如下：
+
+```bash
+[root@master01 test]# go run main.go
+process id: 676092
+current pid: 1
+stress: info: [7] dispatching hogs: 0 cpu, 0 io, 1 vm, 0 hdd
+```
+
+此时未报错，在新的宿主机命令终端中查看进程 676092 的实际内存占用，`top -p 676092`：
+
+```bash
+top - 11:45:48 up 19:58,  2 users,  load average: 0.22, 0.53, 0.57
+Tasks:   1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.3 us,  0.8 sy,  0.0 ni, 96.6 id,  0.0 wa,  0.3 hi,  0.1 si,  0.0 st
+MiB Mem :  23525.9 total,   8590.1 free,   6495.6 used,   9348.4 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  17030.4 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 676092 root      20   0  527756 524460    276 S   0.3   2.2   0:00.34 stress
+```
+
+从上面的输出可以看出，此时进程的内存占用是 512 / 23525.9 ≈ 0.0218，四舍五入转换成百分比即为 2.2%。而且此时程序并未报错，则再次验证了 Cgroup 的有效性。
+
+🔖 **cgroup.procs 和 tasks**
+
+通过查看目录`/sys/fs/cgroup/memory/mygroup`可以看到：
+
+```bash
+[root@master01 ~]# ls /sys/fs/cgroup/memory/mygroup
+cgroup.clone_children           memory.kmem.tcp.failcnt             memory.numa_stat
+cgroup.event_control            memory.kmem.tcp.limit_in_bytes      memory.oom_control
+cgroup.kill                     memory.kmem.tcp.max_usage_in_bytes  memory.pressure_level
+cgroup.procs                    memory.kmem.tcp.usage_in_bytes      memory.qos_level
+memory.events                   memory.kmem.usage_in_bytes          memory.reclaim
+memory.events.local             memory.ksm                          memory.soft_limit_in_bytes
+memory.failcnt                  memory.limit_in_bytes               memory.stat
+memory.flag_stat                memory.low                          memory.swapfile
+memory.force_empty              memory.max_usage_in_bytes           memory.swap.max
+memory.force_swapin             memory.memfs_files_info             memory.swappiness
+memory.high                     memory.memsw.failcnt                memory.usage_in_bytes
+memory.high_async_ratio         memory.memsw.limit_in_bytes         memory.use_hierarchy
+memory.kmem.failcnt             memory.memsw.max_usage_in_bytes     memory.wb_blkio_ino
+memory.kmem.limit_in_bytes      memory.memsw.usage_in_bytes         notify_on_release
+memory.kmem.max_usage_in_bytes  memory.min                          tasks
+memory.kmem.slabinfo            memory.move_charge_at_immigrate
+```
+
+里面包含了两个关键文件 `cgroup.procs` 和 `tasks`。在 Linux cgroups 机制中，cgroup.procs 和 tasks 文件均用于管理控制组（cgroup）中的进程，但两者在操作对象、功能和设计定位上存在显著区别。以下是详细对比：
+
+| 特性     | cgroup.procs                            | tasks                                       |
+| -------- | --------------------------------------- | ------------------------------------------- |
+| 操作对象 | 线程组 ID（TGID）                       | 线程 ID（TID）                              |
+| 功能范围 | 管理整个进程组（包含所有线程）          | 管理单个线程                                |
+| 写入效果 | 写入 TGID 会将进程的所有线程加入 cgroup | 写入 TID 仅加入单个线程，不涉及同组其他线程 |
