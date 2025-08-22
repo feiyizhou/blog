@@ -404,5 +404,3 @@ c--------- 2 root root 0, 0 Aug 22 14:30 base1.txt
 **文件删除的过程如下所示**
 
 ![Docker](/docker/core/cow-layer-merged-delete.png)
-
-## Docker 文件存储
