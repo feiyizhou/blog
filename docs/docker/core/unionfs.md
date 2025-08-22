@@ -92,11 +92,33 @@ OverlayFS（Overlay File System）是 Linux 内核中的一种联合挂载文件
 
 整体架构如下图所示：
 
-![Docker](/docker/core/cow-dir.png)
+![Docker](/docker/core/cow-layer.png)
 
 #### 文件操作
 
 下面通过命令行模拟测试 OverlayFS 的挂载和修改：
+
+1️⃣ **创建测试用的文件夹**
+
+```bash
+mkdir -p /tmp/overlay-demo/{lower1,lower2,upper,work,merged}
+```
+
+目录结构图如下：
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+├── lower2
+├── merged
+├── upper
+└── work
+
+5 directories, 0 files
+```
+
+2️⃣ **在 lower 层创建一些出示文件**
 
 ```bash
 
