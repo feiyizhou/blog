@@ -40,6 +40,7 @@ aside: false
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=fff)
 ![Redis](https://img.shields.io/badge/Redis-%23DD0031.svg?logo=redis&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-%2307405e.svg?logo=sqlite&logoColor=white)
+![Elasticsearch](https://img.shields.io/badge/Elasticsearch-blue?logo=elasticsearch)
 
 **Frameworks, Platforms, Package Manager and Libraries:**
 
