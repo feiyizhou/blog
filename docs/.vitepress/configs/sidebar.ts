@@ -62,4 +62,5 @@ export const sidebar: DefaultTheme.Config["sidebar"] = {
       ],
     },
   ],
+  "/daily-note/": [{ text: "个性小牌子", link: "/daily-note/shields" }],
 };

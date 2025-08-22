@@ -42,10 +42,10 @@ export const nav: DefaultTheme.Config["nav"] = [
     items: [{ text: "agent", link: "/ai/agent" }],
     activeMatch: "^/ai/",
   },
-  // {
-  //   text: "日常笔记",
-  //   items: [{ text: "vitepress", link: "/daily-note/vitepress" }],
-  //   activeMatch: "^/daily-note/",
-  // },
+  {
+    text: "日常笔记",
+    items: [{ text: "个性小牌子", link: "/daily-note/shields" }],
+    activeMatch: "^/daily-note/",
+  },
   { text: "About Me", link: "/feiyizhou" },
 ];
