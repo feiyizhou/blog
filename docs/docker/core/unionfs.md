@@ -72,15 +72,15 @@ Docker 目前默认使用 OverlayFS 作为默认的存储系统，Docker 从早�
 
 OverlayFS（Overlay File System）是 Linux 内核中的一种联合挂载文件系统，通过将多个目录（层）透明叠加为单一视图，实现高效的分层存储管理。OverlayFS 使用四个目录来实现分层联合：
 
-- lowerdir（只读层）
+- lower（只读层）
 
   - 可包含多个目录（如 Docker 镜像层）
-  - 文件不可修改，多个容器可共享同一组 lowerdir
+  - 文件不可修改，多个容器可共享同一组 lower
 
-- upperdir（读写层）
+- upper（读写层）
 
   - 存储用户修改后的内容（如容器运行时的文件内容变更）
-  - 文件修改或删除时，通过写时复制（CoW）将数据从 lowerdir 复制到 upperdir 再操作
+  - 文件修改或删除时，通过写时复制（CoW）将数据从 lower 复制到 upper 再操作
 
 - workdir（工作目录）
 
@@ -88,7 +88,7 @@ OverlayFS（Overlay File System）是 Linux 内核中的一种联合挂载文件
 
 - merged（合并目录）
 
-  - 用户访问的最终目录，动态合并 lowerdir 和 upperdir 内容
+  - 用户访问的最终目录，动态合并 lower 和 upper 内容
 
 整体架构如下图所示：
 
@@ -96,17 +96,14 @@ OverlayFS（Overlay File System）是 Linux 内核中的一种联合挂载文件
 
 #### 文件操作
 
-下面通过命令行模拟测试 OverlayFS 的挂载和修改：
+🌳 **挂载文件**
 
-1️⃣ **创建测试用的文件夹**
+1️⃣ **创建文件夹**
 
 ```bash
 mkdir -p /tmp/overlay-demo/{lower1,lower2,upper,work,merged}
-```
 
-目录结构图如下：
-
-```bash
+# 目录结构图如下
 [root@master01 ~]# tree /tmp/overlay-demo/
 /tmp/overlay-demo/
 ├── lower1
@@ -118,10 +115,294 @@ mkdir -p /tmp/overlay-demo/{lower1,lower2,upper,work,merged}
 5 directories, 0 files
 ```
 
-2️⃣ **在 lower 层创建一些出示文件**
+2️⃣ **创建一些初始文件**
 
 ```bash
-
+echo "Config template: lower1" > /tmp/overlay-demo/lower1/config.conf
+echo "Config template: lower2" > /tmp/overlay-demo/lower2/config.conf
+echo "Env file content: lower1" > /tmp/overlay-demo/lower1/env
+echo "Base file content: lower1" > /tmp/overlay-demo/lower1/base1.txt
+echo "Base file content: lower2" > /tmp/overlay-demo/lower2/base2.txt
+echo "Personal content" > /tmp/overlay-demo/upper/tom.txt
+echo "Env file content: upper" > /tmp/overlay-demo/upper/env
 ```
+
+**创建初始文件后目录结构如下**
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+├── upper
+│   ├── env
+│   └── tom.txt
+└── work
+    └── work
+
+6 directories, 7 files
+```
+
+3️⃣ **挂载目录**
+
+```bash
+sudo mount -t overlay overlay \
+-o lowerdir=/tmp/overlay-demo/lower1:/tmp/overlay-demo/lower2,\
+upperdir=/tmp/overlay-demo/upper,\
+workdir=/tmp/overlay-demo/work \
+/tmp/overlay-demo/merged
+```
+
+挂载目录需要 root 权限。具体参数如下：
+
+- `-t overlay`
+
+  表示文件系统为 overlay
+
+- `-o lowerdir=/tmp/overlay-demo/lower1:/tmp/overlay-demo/lower2,upperdir=/tmp/overlay-demo/upper,workdir=/tmp/overlay-demo/work`
+
+  指定 lowerdir，支持多个 lower，使用`:`隔离，优先级从左往右依次降低；指定 upper；指定 work
+
+- `/tmp/overlay-demo/merged`
+
+  指定 merged，即最终的挂载点、用户看到的最终的、合并后的统一视图
+
+**挂载后，目录结构如下**
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+│   ├── base1.txt
+│   ├── base2.txt
+│   ├── config.conf
+│   ├── env
+│   └── tom.txt
+├── upper
+│   ├── env
+│   └── tom.txt
+└── work
+    └── work
+
+6 directories, 12 files
+```
+
+**查看 merged 下的 config.conf、env 内容**
+
+```bash
+# config.conf
+[root@master01 ~]# cat /tmp/overlay-demo/merged/config.conf
+Config template: lower1
+# env
+[root@master01 ~]# cat /tmp/overlay-demo/merged/env
+Env file content: upper
+```
+
+合并后的 config.conf 内容为`Config template: lower1`，证明了多个 lower 的优先级在挂载参数中是从左往右依次降低；合并后的 env 的内容为`Env file content: upper`，证明了 upper 的优先级高于 lower。整体的文件结构如下图所示
+
+![Docker](/docker/core/cow-layer-merged.png)
+
+✨ **新增文件**
+
+```bash
+echo "test" > /tmp/overlay-demo/merged/test
+```
+
+**新增文件后，整体目录结构如下**
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+│   ├── base1.txt
+│   ├── base2.txt
+│   ├── config.conf
+│   ├── env
+│   ├── test
+│   └── tom.txt
+├── upper
+│   ├── env
+│   ├── test
+│   └── tom.txt
+└── work
+    └── work
+```
+
+从上面的目录结构可以看出，在 OverlayFS 中添加文件其实就是在 upper 中添加文件，然后合并覆盖后的结果。
+
+**文件新增的过程如下所示**
+
+![Docker](/docker/core/cow-layer-merged-new.png)
+
+📑 **修改文件**
+
+```bash
+echo "Modified base content: merged" > /tmp/overlay-demo/merged/base1.txt
+```
+
+**修改文件后，整体目录结构如下**
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+│   ├── base1.txt
+│   ├── base2.txt
+│   ├── config.conf
+│   ├── env
+│   └── tom.txt
+├── upper
+│   ├── base1.txt
+│   ├── env
+│   └── tom.txt
+└── work
+    └── work
+
+6 directories, 13 files
+```
+
+```bash
+# lowerdir内容
+[root@master01 ~]# cat /tmp/overlay-demo/lower1/base1.txt
+Base file content: lower2
+
+# upperdir内容
+[root@master01 ~]# cat /tmp/overlay-demo/upper/base1.txt
+Modified base content: merged
+
+# merged内容
+[root@master01 ~]# cat /tmp/overlay-demo/merged/base1.txt
+Modified base content: merged
+```
+
+由上面的文件内容变化可以得出试验结果：
+
+- 原始文件（/tmp/overlay-demo/lower1/base1.txt）保持不变
+- 修改文件后 upper 层新增了一个 base1.txt 文件
+- 用户看到的内容其实是来自 upper 层
+
+**文件修改的过程如下所示**
+
+![Docker](/docker/core/cow-layer-merged-modify.png)
+
+OverlayFS 中，lower 的文件是不允许修改的，在 Cow 的技术机制下，对 base1.txt 进行修改时，文件系统发现 uppder 中不存在 base1.txt，就会从 lower 中复制一份副本到 upper 中，再进行修改。修改后的内容，在合并覆盖后，用户看到的就是对 base1.txt 修改后的内容。
+
+> 从 lower copy 到 upper，叫做 copy_up
+
+🧺 **删除文件**
+
+在上一步的基础上，删除`/tmp/overlay-demo/merged/base1.txt`
+
+```bash
+rm -f /tmp/overlay-demo/merged/base1.txt
+```
+
+**删除后的文件目录结构如下**
+
+```bash
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+│   ├── base2.txt
+│   ├── config.conf
+│   ├── env
+│   └── tom.txt
+├── upper
+│   ├── base1.txt
+│   ├── env
+│   └── tom.txt
+└── work
+    └── work
+        └── #7eb
+
+6 directories, 13 files
+```
+
+**查看 upperdir 中的文件变化**
+
+```bash
+[root@master01 ~]# ls -al /tmp/overlay-demo/upper/
+total 8
+drwxr-xr-x 2 root root  100 Aug 22 14:30 .
+drwxr-xr-x 7 root root  140 Aug 22 10:28 ..
+c--------- 2 root root 0, 0 Aug 22 14:30 base1.txt
+-rw-r--r-- 1 root root   24 Aug 22 11:36 env
+-rw-r--r-- 1 root root   17 Aug 22 11:36 tom.txt
+```
+
+可以发现，lower 中的文件并不会被删除，而是会在 upper 中创建一个标记，表示这个文件已经被删除了。再次删除文件`c--------- 2 root root 0, 0 Aug 22 14:30 base1.txt`，发现 merged 中又可以看到 base1.txt 文件了
+
+```bash
+[root@master01 ~]# rm -f /tmp/overlay-demo/upper/base1.txt
+[root@master01 ~]# tree /tmp/overlay-demo/
+/tmp/overlay-demo/
+├── lower1
+│   ├── base1.txt
+│   ├── config.conf
+│   └── env
+├── lower2
+│   ├── base2.txt
+│   └── config.conf
+├── merged
+│   ├── base1.txt
+│   ├── base2.txt
+│   ├── config.conf
+│   ├── env
+│   └── tom.txt
+├── upper
+│   ├── env
+│   └── tom.txt
+└── work
+    └── work
+        └── #7eb
+
+6 directories, 13 files
+```
+
+由上面的文件内容变化可以得出试验结果：
+
+- 原始文件（/tmp/overlay-demo/lower1/base1.txt）保持不变
+- 删除文件后 upper 层会添加一个与文件同名的删除标记
+- 删除标记后，merged 又能够看到该文件了
+
+> OverlayFS 中，删除从 lower 层映射来的文件或文件夹时，会在 upper 层添加一个与文件或文件夹同名的 c 标识文件，这个文件叫 whiteout 文件。这个标识文件意味着该文件或文件夹已经被删除，而且合并覆盖过程中，当扫描到这个文件或文件夹后，会忽略此文件或文件夹。导致 merged 层中不会看到该文件或文件夹，从用户侧来说，即达到了删除的效果。
+
+**文件删除的过程如下所示**
+
+![Docker](/docker/core/cow-layer-merged-delete.png)
 
 ## Docker 文件存储
