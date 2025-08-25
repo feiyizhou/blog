@@ -4,7 +4,7 @@ export const nav: DefaultTheme.Config["nav"] = [
   { text: "首页", link: "/index" },
   // { text: "导航", link: "/nav", activeMatch: "^/nav" },
   {
-    text: "Golang",
+    text: "📚Golang",
     items: [
       { text: "Go基础知识", link: "/go/base/type" },
       { text: "Go常用库及框架", link: "/go/lib/gin" },
@@ -12,7 +12,7 @@ export const nav: DefaultTheme.Config["nav"] = [
     activeMatch: "^/go/",
   },
   {
-    text: "Docker",
+    text: "📦Docker",
     items: [
       { text: "Docker核心技术", link: "/docker/core/namespace" },
       { text: "Dockerfile", link: "/docker/dockerf" },
@@ -20,7 +20,7 @@ export const nav: DefaultTheme.Config["nav"] = [
     activeMatch: "^/docker/",
   },
   {
-    text: "k8s",
+    text: "🚢k8s",
     items: [
       { text: "部署", link: "/k8s/deploy/cluster" },
       { text: "工作负载", link: "/k8s/resource/pod" },
@@ -29,23 +29,20 @@ export const nav: DefaultTheme.Config["nav"] = [
     ],
     activeMatch: "^/k8s/",
   },
-  // {
-  //   text: "源码阅读",
-  //   items: [
-  //     { text: "runc", link: "/sc/runc" },
-  //     { text: "k8s", link: "/sc/k8s" },
-  //   ],
-  //   activeMatch: "^/sc/",
-  // },
   {
-    text: "AI",
+    text: "📑源码阅读",
+    items: [],
+    activeMatch: "^/sc/",
+  },
+  {
+    text: "🤖AI",
     items: [{ text: "agent", link: "/ai/agent" }],
     activeMatch: "^/ai/",
   },
   {
-    text: "日常笔记",
+    text: "📖日常笔记",
     items: [{ text: "个性徽章", link: "/daily-note/shields" }],
     activeMatch: "^/daily-note/",
   },
-  { text: "About Me", link: "/feiyizhou" },
+  { text: "🙋‍♂️About Me", link: "/feiyizhou" },
 ];

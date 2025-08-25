@@ -22,15 +22,15 @@ hero:
       theme: alt
 
 features:
-  - icon: 📖
+  - icon: 📚
     title: Golang
     details: 整理常用知识点<small><br />面试八股文/使用技巧等，如有异议按你的理解为主，不接受反驳</small>
-    link: /go/type
+    link: /go/base/type
     linkText: Golang
   - icon: 📦
     title: Docker
     details: 学习与Docker相关的技术<br /><small>核心技术/实现原理/使用技巧等</small>
-    link: /docker/usage/image
+    link: /docker/core/namespace
     linkText: Docker
   - icon: 🚢
     title: Kubernetes
