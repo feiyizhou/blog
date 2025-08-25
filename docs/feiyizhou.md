@@ -23,11 +23,11 @@ aside: false
 
 ![Wechat](https://img.shields.io/badge/WeChat-feiyizhou7816-07C160?logo=wechat)
 ![Email](https://img.shields.io/badge/Email-1491877304@qq.com-EA4335?logo=Gmail)
-![GitHub](https://img.shields.io/badge/GitHub-feyizhou-%23121011.svg?logo=github&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-feyizhou-121011?logo=github&logoColor=white)
 
 **Languages:**
 
-![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?&logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-00ADD8?&logo=go&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)
 ![Bash](https://img.shields.io/badge/Bash-4EAA25?logo=gnubash&logoColor=fff)
 ![Shell Script](https://img.shields.io/badge/Shell_Script-4EAA25?logo=gnu-bash&logoColor=fff)
@@ -36,17 +36,17 @@ aside: false
 
 **Databases:**
 
-![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?logo=mongodb&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-4ea94b?logo=mongodb&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=fff)
-![Redis](https://img.shields.io/badge/Redis-%23DD0031.svg?logo=redis&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-%2307405e.svg?logo=sqlite&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DD0031?logo=redis&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-07405e?logo=sqlite&logoColor=white)
 ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-blue?logo=elasticsearch)
 
 **Frameworks, Platforms, Package Manager and Libraries:**
 
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=fff)
-![LangChain](https://img.shields.io/badge/LangChain-1c3c3c.svg?logo=langchain&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1c3c3c?logo=langchain&logoColor=white)
 ![Hugo](https://img.shields.io/badge/Hugo-FF4088?logo=hugo&logoColor=fff)
 ![Helm](https://img.shields.io/badge/Helm-0F1689?logo=helm&logoColor=fff)
 ![PyPI](https://img.shields.io/badge/PyPI-3775A9?logo=pypi&logoColor=fff)
@@ -56,15 +56,15 @@ aside: false
 ![Visual Studio Code](https://img.shields.io/badge/Visual_Studio_Code-007ACC?logo=VisualStudioCode&logoColor=fff)
 ![PyCharm](https://img.shields.io/badge/PyCharm-000?logo=pycharm&logoColor=fff)
 ![Git](https://img.shields.io/badge/Git-F05032?logo=git&logoColor=fff)
-![Vim](https://img.shields.io/badge/Vim-%2311AB00.svg?logo=vim&logoColor=white)
+![Vim](https://img.shields.io/badge/Vim-11AB00?logo=vim&logoColor=white)
 ![Vercel](https://img.shields.io/badge/vercel-000000?logo=Vercel&logoColor=fff)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=insomnia&logoColor=000)
 
 **Operating Systems:**
 
-![Alpine Linux](https://img.shields.io/badge/Alpine%20Linux-0D597F?logo=alpinelinux&logoColor=fff)
-![Arch Linux](https://img.shields.io/badge/Arch%20Linux-1793D1?logo=arch-linux&logoColor=fff)
+![Alpine Linux](https://img.shields.io/badge/Alpine_Linux-0D597F?logo=alpinelinux&logoColor=fff)
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?logo=arch-linux&logoColor=fff)
 ![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=fff)
 ![Fedora](https://img.shields.io/badge/Fedora-51A2DA?logo=fedora&logoColor=fff)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
