@@ -55,7 +55,7 @@ export default defineConfig({
       },
       {
         icon: "wechat",
-        link: "https://github.com/feiyizhou/blog/blob/main/docs/public/feiyizhou.png",
+        link: "https://github.com/feiyizhou/blog/blob/main/docs/public/feiyizhou.png?raw=true",
       },
       {
         icon: "bilibili",
