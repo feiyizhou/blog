@@ -40,7 +40,28 @@ export default defineConfig({
 
     search: { provider: "local" },
 
-    socialLinks: [{ icon: "github", link: "https://github.com/feiyizhou" }],
+    socialLinks: [
+      {
+        icon: "github",
+        link: "https://github.com/feiyizhou",
+      },
+      {
+        icon: "bilibili",
+        link: "https://space.bilibili.com/446220767?spm_id_from=333.33.0.0",
+      },
+      {
+        icon: "wechat",
+        link: "https://github.com/feiyizhou/blog/blob/main/docs/public/feiyizhou.png",
+      },
+      {
+        icon: "csdn",
+        link: "https://blog.csdn.net/gulang0309?spm=1010.2135.3001.10640",
+      },
+      {
+        icon: "juejin",
+        link: "https://juejin.cn/user/4253368796852359",
+      },
+    ],
 
     outline: {
       level: "deep",

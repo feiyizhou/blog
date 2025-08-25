@@ -25,6 +25,10 @@ aside: false
 ![Email](https://img.shields.io/badge/Email-1491877304@qq.com-EA4335?logo=Gmail)
 ![GitHub](https://img.shields.io/badge/GitHub-feyizhou-121011?logo=github&logoColor=white)
 
+> 如果想接收最新的文章内容，请扫描下方二维码，关注公众号：程序猿费益州，最新的探索与实践内容会第一时间推送给你。
+
+![程序猿费益州](gongzhonghao.jpg)
+
 **Languages:**
 
 ![Go](https://img.shields.io/badge/Go-00ADD8?&logo=go&logoColor=white)
