@@ -44,7 +44,7 @@ export const nav: DefaultTheme.Config["nav"] = [
   },
   {
     text: "日常笔记",
-    items: [{ text: "个性小牌子", link: "/daily-note/shields" }],
+    items: [{ text: "个性徽章", link: "/daily-note/shields" }],
     activeMatch: "^/daily-note/",
   },
   { text: "About Me", link: "/feiyizhou" },
