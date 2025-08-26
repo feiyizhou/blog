@@ -4,7 +4,6 @@ export const sidebar: DefaultTheme.Config["sidebar"] = {
   "/go/": [
     {
       text: "Go基础知识",
-      collapsed: false,
       items: [
         { text: "类型", link: "/go/base/type" },
         { text: "并发", link: "/go/base/concurrency" },
@@ -12,7 +11,6 @@ export const sidebar: DefaultTheme.Config["sidebar"] = {
     },
     {
       text: "Go常用库及框架",
-      collapsed: false,
       items: [
         { text: "gin", link: "/go/lib/gin" },
         { text: "cobra", link: "/go/lib/cobra" },

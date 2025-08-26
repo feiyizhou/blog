@@ -36,6 +36,11 @@ export const nav: DefaultTheme.Config["nav"] = [
     activeMatch: "^/cc/",
   },
   {
+    text: "🐧Linux",
+    items: [],
+    activeMatch: "^/linux/",
+  },
+  {
     text: "📑源码阅读",
     items: [],
     activeMatch: "^/sc/",
