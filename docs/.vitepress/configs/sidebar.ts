@@ -19,46 +19,48 @@ export const sidebar: DefaultTheme.Config["sidebar"] = {
       ],
     },
   ],
-  "/docker/": [
+  "/cc/": [
     {
-      text: "Docker核心技术",
-      collapsed: false,
+      text: "Docker",
       items: [
-        { text: "Linux Namespace", link: "/docker/core/namespace" },
-        { text: "Linux Cgroups", link: "/docker/core/cgroups" },
-        { text: "Union File System", link: "/docker/core/unionfs" },
-      ],
-    },
-    { text: "Dockerfile", collapsed: false, link: "/docker/dockerf" },
-  ],
-  "/k8s/": [
-    {
-      text: "部署",
-      items: [
-        { text: "k8s集群", link: "/k8s/deploy/cluster" },
-        { text: "StorageClass", link: "/k8s/deploy/storageclass" },
-        { text: "Purelb", link: "/k8s/deploy/purelb" },
+        {
+          text: "Docker核心技术",
+          collapsed: false,
+          items: [
+            { text: "Linux Namespace", link: "/cc/docker/core/namespace" },
+            { text: "Linux Cgroups", link: "/cc/docker/core/cgroups" },
+            { text: "Union File System", link: "/cc/docker/core/unionfs" },
+          ],
+        },
+        { text: "Dockerfile", collapsed: false, link: "/cc/docker/dockerf" },
       ],
     },
     {
-      text: "工作负载",
+      text: "Kubernetes",
       items: [
-        { text: "pod", link: "/k8s/resource/pod" },
-        { text: "deployment", link: "/k8s/resource/deployment" },
-        { text: "daemonset", link: "/k8s/resource/daemonset" },
-        { text: "job", link: "/k8s/resource/job" },
-        { text: "statefulset", link: "/k8s/resource/statefulset" },
+        {
+          text: "工作负载",
+          collapsed: false,
+          items: [
+            { text: "pod", link: "/cc/k8s/resource/pod" },
+            { text: "deployment", link: "/cc/k8s/resource/deployment" },
+            { text: "daemonset", link: "/cc/k8s/resource/daemonset" },
+            { text: "job", link: "/cc/k8s/resource/job" },
+            { text: "statefulset", link: "/cc/k8s/resource/statefulset" },
+          ],
+        },
+        {
+          text: "operator",
+          collapsed: false,
+          items: [{ text: "crd", link: "/cc/k8s/operator/crd" }],
+        },
       ],
-    },
-    {
-      text: "operator",
-      items: [{ text: "crd", link: "/k8s/operator/crd" }],
     },
     {
       text: "helm",
       items: [
-        { text: "命令行", link: "/k8s/helm/cmd" },
-        { text: "模板编写技巧", link: "/k8s/helm/template" },
+        { text: "命令行", link: "/cc/helm/cmd" },
+        { text: "模板编写技巧", link: "/cc/helm/template" },
       ],
     },
   ],

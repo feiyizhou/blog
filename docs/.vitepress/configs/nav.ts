@@ -12,22 +12,25 @@ export const nav: DefaultTheme.Config["nav"] = [
     activeMatch: "^/go/",
   },
   {
-    text: "📦Docker",
+    text: "☁️云计算",
     items: [
-      { text: "Docker核心技术", link: "/docker/core/namespace" },
-      { text: "Dockerfile", link: "/docker/dockerf" },
+      {
+        text: "Docker",
+        items: [
+          { text: "Docker核心技术", link: "/cc/docker/core/namespace" },
+          { text: "Dockerfile", link: "/cc/docker/dockerf" },
+        ],
+      },
+      {
+        text: "Kubernetes",
+        items: [
+          { text: "工作负载", link: "/cc/k8s/resource/pod" },
+          { text: "operator", link: "/cc/k8s/operator/crd" },
+          { text: "helm", link: "/cc/k8s/helm/cmd" },
+        ],
+      },
     ],
-    activeMatch: "^/docker/",
-  },
-  {
-    text: "🚢k8s",
-    items: [
-      { text: "部署", link: "/k8s/deploy/cluster" },
-      { text: "工作负载", link: "/k8s/resource/pod" },
-      { text: "operator", link: "/k8s/operator/crd" },
-      { text: "helm", link: "/k8s/helm/cmd" },
-    ],
-    activeMatch: "^/k8s/",
+    activeMatch: "^/cc/",
   },
   {
     text: "📑源码阅读",
