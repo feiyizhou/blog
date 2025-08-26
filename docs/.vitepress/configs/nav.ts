@@ -26,8 +26,11 @@ export const nav: DefaultTheme.Config["nav"] = [
         items: [
           { text: "工作负载", link: "/cc/k8s/resource/pod" },
           { text: "operator", link: "/cc/k8s/operator/crd" },
-          { text: "helm", link: "/cc/k8s/helm/cmd" },
         ],
+      },
+      {
+        text: "helm",
+        link: "/cc/helm/cmd",
       },
     ],
     activeMatch: "^/cc/",
