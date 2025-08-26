@@ -30,12 +30,12 @@ features:
   - icon: 📦
     title: Docker
     details: 学习与Docker相关的技术<br /><small>核心技术/实现原理/使用技巧等</small>
-    link: /docker/core/namespace
+    link: /cc/docker/core/namespace
     linkText: Docker
   - icon: 🚢
     title: Kubernetes
     details: 学习与kubernetes相关的技术<br /><small>核心技术/实现原理/使用技巧等</small>
-    link: /k8s/deploy/cluster
+    link: /cc/k8s/resource/pod
     linkText: Kubernetes
   - icon: 📑
     title: 源码阅读
