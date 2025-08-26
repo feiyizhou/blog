@@ -27,7 +27,7 @@ Namespace 本质是 Linux 系统内核的一种功能，其主要作用是对进
 
 ## Namespace 生命周期和回收策略
 
-Namespace 是随着进程创建而创建的，不存在脱离进程单独存在的 Namespace。而在 Linux 内核源码中，各类 Namespace 也是作为属性存在于进程结构体中。
+在 Linux 内核源码中，各类 Namespace 是作为属性存在于进程结构体中。随着进程的创建，各类 Namespace 会依次被创建。
 
 ### Namespace 的创建过程
 
