@@ -19,7 +19,7 @@ Network Namespace 是 Linux 网络虚拟化技术的基石。每个 Network Name
 默认情况下，当一个 Namespace 没有任何进程（或引用）在使用它时，会被内核回收和销毁。ip 工具并不是通过创建一个进程去维持 Network Namespace 的生命周期，而是通过文件挂载点来实现 Network Namespace 的持久化：
 
 - 创建绑定点：在执行`ip netns add`命令时，会在`/var/run/netns`目录下创建一个与命名空间同名的空文件
-- 绑定挂载：在调用系统函数创建了 Network Namespace 后，会将该 Network Namespace 的专用文件绑定挂载到在`/var/run/netns`目录下创建的那个空文件上
+- 绑定挂载：在调用系统函数创建了 Network Namespace 后，ip 命令会通过 `​​mount --bind`​​ 系统调用，将内核中代表新创建的网络命名空间的那个特殊对象绑定挂载到在`/var/run/netns`目录下创建的那个空文件上。这使得这个原本普通的文件 `/var/run/netns/[nsname] `变成了一个特殊的挂载点。读取这个文件就相当于访问了内核中对应的 Network Namespace 对象
 - 维持引用：这个绑定挂载操作会使得内核即使在没有进程运行于该 Namespace 时，也因为挂载点的存在而保持对该 Namespace 的引用 ​​，从而防止其被自动回收
 
 ```bash
