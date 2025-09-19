@@ -188,3 +188,7 @@ PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
 ## Linux Bridge
 
 两个不同的 Network Namespace 可以借助 veth pair 实现网络互通，但是当需要让很多不同的 Network Namespace 相互连接，只用 veth pair 就会让网络拓扑关系异常复杂。为了解决这个问题，就需要引入 Linux Bridge。
+
+Linux Bridge 是 Linux 内核提供的一种虚拟网络设备，它工作在数据链路层（OSI 模型第二层），其功能类似于一台物理的网络交换机，能够将多个物理或虚拟的网络接口“链接”起来，使他们仿佛连接在同一个虚拟的局域网（LAN）段中，实现二层通信。
+
+🔍 Linux Bridge 的核心在于其维护了一张 MAC 地址表，依靠转发、过滤和泛洪机制来高效地交换数据。
